@@ -50,11 +50,11 @@ let update_server = (serverObj) => {
     })
 };
 
-let delete_server = (serverName) => {
+let delete_server = (serverid) => {
     return new Promise((resolve, reject) => {
-        Server.deleteOne({ name: serverName }, (error, data) => {
+        Server.deleteOne({ serverid: serverid }, (error, data) => {
             if (error) reject(error);
-            resolve('Deleted.')
+            resolve(data);
         })
     })
 }

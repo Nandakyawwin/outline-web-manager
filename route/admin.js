@@ -8,9 +8,11 @@ module.exports = (express, bodyParser) => {
         Admin = require('../database/admin'),
         Server = require('../database/server'),
         Key = require('../database/key');
+    const axios = require('axios');
+    const https = require('https');
+    const agent = new https.Agent({ rejectUnauthorized: false });
 
     const { OutlineVPN } = require('outlinevpn-api');
-
     ///////////////////////////////////////////////////////////
     ///////////////                          //////////////////
     //////////////                           //////////////////
@@ -71,6 +73,7 @@ module.exports = (express, bodyParser) => {
 
     });
 
+
     // Admin update
     router.post('/update', (req, res) => {
         let adminobj = {
@@ -129,22 +132,17 @@ module.exports = (express, bodyParser) => {
 
 
 
-
-    // renameServer => rename server (name,url)
-
-    router.post('/rename/server', (req, res) => {
-        let apiURL = req.body.url;
-        let name = req.body.name;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).renameServer(name)
-            .then(data => res.json({ con: true, msg: data }))
+    router.post('/create/server', (req, res) => {
+        let serverObj = {
+            name: req.body.name,
+            url: req.body.url
+        };
+        Server.save_server(serverObj)
+            .then(result => res.json({ con: true, msg: result }))
             .catch(err => res.json({ con: false, msg: err }));
     })
-
     // getDataUsage => server all data usage
-
+    // /metrics/transfer
     router.get('/getDataUsage/:serverid', (req, res) => {
         let serverid = req.param('serverid');
         Server.findServerbyname(Number(serverid))
@@ -159,149 +157,11 @@ module.exports = (express, bodyParser) => {
             .catch(err => res.json({ con: false, msg: err }));
     })
 
-
-    // setDefaultDataLimit => server/setting/Default data limit
-
-    router.post('/setDefaultDataLimit', (req, res) => {
-        let apiURL = req.body.url;
-        let bytes = req.body.bytes;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).setDefaultDataLimit(bytes)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-
-
-    // deleteDefaultDataLimit => server/setting/Delete Default data limit
-
-    router.post('/deleteDefaultDataLimit', (req, res) => {
-        let apiURL = req.body.url;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).deleteDefaultDataLimit()
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-
-
-    // setHostnameForAccessKeys => set hostname for access keys
-
-    router.post('/setHostnameForAccessKeys', (req, res) => {
-        let apiURL = req.body.url;
-        let hostname = req.body.hostname;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).setHostnameForAccessKeys(hostname)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-
-    })
-
-
-    // setPortForNewAccessKeys => set port for new access keys
-
-    router.post('/setPortForNewAccessKeys', (req, res) => {
-        let apiURL = req.body.url;
-        let port = req.body.port;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).setPortForNewAccessKeys(port)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // getDataUserUsage => sskey data usage (id)
-
-    router.post('/getDataUserUsage', (req, res) => {
-        let apiURL = req.body.url;
-        let id = req.body.id;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).getDataUserUsage(id)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // getShareMetrics => get Share metrics
-
-    router.post('/getShareMetrics', (req, res) => {
-        let apiURL = req.body.url;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).getShareMetrics()
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-
-    // setShareMetrics => set share metrics
-
-    router.post('/setShareMetrics', (req, res) => {
-        let apiURL = req.body.url;
-        let bool = req.body.bool;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).setShareMetrics(Boolean(bool))
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-
-    // Admin Post Server
-
-    router.post('/create/server', (req, res) => {
-        let serverObj = {
-            name: req.body.name,
-            url: req.body.url
-        };
-        Server.save_server(serverObj)
-            .then(result => res.json({ con: true, msg: result }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // Admin Post Server
-
-    // Admin Update Server
-
-    router.post('/update/server', (req, res) => {
-        let serverObj = {
-            name: req.body.name,
-            url: req.body.url
-        };
-        Server.update_server(serverObj)
-            .then(result => res.send({ con: true, msg: result }))
-            .catch(err => res.send({ con: false, msg: err }));
-    })
-
-    // Admin Update Server
-
-    // Admin server paginate
-
-    router.post('/server/paginate/:start/:count', (req, res) => {
-        let start = req.param('start');
-        let count = req.param('count');
-
-        Server.paginate(Number(start), Number(count))
-            .then(result => res.send({ con: true, msg: result }))
-            .catch(err => res.send({ con: false, msg: err }));
-    });
-
-
     // Admin delete server
 
-    router.post('/delete/server', passport.authenticate('jwt', { session: false }), (req, res) => {
-        let id = req.body.movieid;
-        Movie.destroy(String(id))
+    router.post('/delete/server', (req, res) => {
+        let serverid = req.query.serverid;
+        Server.delete_server(serverid)
             .then(result => res.send({ con: true, msg: result }))
             .catch(err => res.send({ con: false, msg: err }));
     })
@@ -322,11 +182,14 @@ module.exports = (express, bodyParser) => {
 
 
     // getUsers => all sskeys
-
+    // /access-keys
     router.get('/getUsers/:serverid', (req, res) => {
         let serverid = req.param('serverid');
         Server.findServerbyname(Number(serverid))
             .then(result => {
+                // let url = `${result[0].url}/access-keys`;
+                // axios.get(url, { httpsAgent: agent })
+                //     .then(resp => { res.json({ con: true, msg: resp.data }) });
                 new OutlineVPN({
                     apiUrl: result[0].url,
                     fingerprint: process.env.OUTLINE_API_FINGERPRINT
@@ -357,38 +220,31 @@ module.exports = (express, bodyParser) => {
     })
 
 
-    // createUser => create key
-
-    // Admin create key
-    router.post('/create/key', (req, res) => {
-
-        Key.save_key(keyObj)
-            .then(result => res.json({ con: true, msg: `Result is ${result} and obj is ${keyObj}` }))
-            .catch(err => res.json({ con: false, msg: err }));
-
-    });
-
     router.post('/updateKey/:serverid', (req, res) => {
         let serverid = req.param('serverid');
         Server.findServerbyname(Number(serverid))
             .then(data => {
-                let keyObj = {
-                    name: req.body.name,
-                    sskey: req.body.sskey,
-                    datalimit: req.body.datalimit,
-                    datelimit: req.body.datelimit,
-                    url: data[0].url
-                };
-                Key.save_key(keyObj)
-                    .then(result => res.json({ con: true, msg: result }))
-                    .catch(err => res.json({ con: false, msg: err }));
+                res.send(data);
             }).catch
             (err => res.json({ con: false, msg: err }));
     })
 
 
-    router.post('/createUser/:serverid', (req, res) => {
+    router.get('/info/:serverid', (req, res) => {
+        let serverid = req.param('serverid');
+        Server.findServerbyname(Number(serverid))
+            .then(result => {
+                new OutlineVPN({
+                    apiUrl: result[0].url,
+                    fingerprint: process.env.OUTLINE_API_FINGERPRINT
+                }).getServer()
+                    .then(data => res.json({ con: true, msg: data }))
+                    .catch(err => res.json({ con: false, msg: err }));
+            })
+            .catch(err => res.json({ con: false, msg: err }));
+    })
 
+    router.post('/createUser/:serverid', (req, res) => {
         let serverid = req.param('serverid');
         Server.findServerbyname(Number(serverid))
             .then(result => {
@@ -414,18 +270,33 @@ module.exports = (express, bodyParser) => {
             .catch(err => res.json({ con: false, msg: err }));
     })
 
-    // new OutlineVPN({
-    //     apiUrl: data[0].url,
-    //     fingerprint: process.env.OUTLINE_API_FINGERPRINT
-    // }).getServer()
-    //     .then(result => res.json({ con: true, msg: result, data }))
-    //     .catch(err => res.json({ con: false, msg: err }));
+    router.post('/registerUser/:serverid', (req, res) => {
+        let serverid = req.param('serverid');
+        Server.findServerbyname(Number(serverid))
+            .then(result => {
+                let keyObj = {
+                    name: req.body.name,
+                    keyid: req.body.keyid,
+                    url: result[0].url,
+                    sskey: req.body.sskey,
+                    datalimit: req.body.datalimit,
+                    datelimit: req.body.datelimit
+                };
+                Key.save_key(keyObj)
+                    .then(result => res.json({ con: true, msg: result }))
+                    .catch(err => res.json({ con: false, msg: err }));
+                // res.send(keyObj)
+            })
+            .catch(err => res.json({ con: false, msg: err }));
+    })
 
+
+    // sskey Check
     router.post('/key', (req, res) => {
         let key = {
-            name: req.body.sskey
+            sskey: req.body.sskey
         };
-        Key.find_key(key.name)
+        Key.find_key(key.sskey)
             .then(re => {
                 Key.find_key_id(re._id)
                     .then(data => {
@@ -440,84 +311,7 @@ module.exports = (express, bodyParser) => {
             })
             .catch(err => console.log(err));
     })
-    // deleteUser => delete key (id)
 
-    router.post('/deleteUser', (req, res) => {
-        let apiURL = req.body.url;
-        let id = req.body.id;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).deleteUser(id)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // renameUser => rename key (id,name)
-
-    router.post('/renameUser', (req, res) => {
-        let apiURL = req.body.url;
-        let id = req.body.id;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).deleteUser(id)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // addDataLimit => add data limit (id,byte)
-
-    router.post('/addDataLimit', (req, res) => {
-        let apiURL = req.body.url;
-        let id = req.body.id;
-        let bytes = req.body.bytes;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).addDataLimit(id, bytes)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // deleteDataLimit => delete data limit (id)
-
-    router.post('/deleteDataLimit', (req, res) => {
-        let apiURL = req.body.url;
-        let id = req.body.id;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).deleteDataLimit(id)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // disableUser => disable user (id)
-
-    router.post('/disableUser', (req, res) => {
-        let apiURL = req.body.url;
-        let id = req.body.id;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).disableUser(id)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
-
-    // enableUser => enable user (id)
-
-    router.post('/enableUser', (req, res) => {
-        let apiURL = req.body.url;
-        let id = req.body.id;
-        new OutlineVPN({
-            apiUrl: apiURL,
-            fingerprint: process.env.OUTLINE_API_FINGERPRINT
-        }).enableUser(id)
-            .then(data => res.json({ con: true, msg: data }))
-            .catch(err => res.json({ con: false, msg: err }));
-    })
 
 
     // Admin all keys
@@ -527,40 +321,6 @@ module.exports = (express, bodyParser) => {
             .then(result => res.send({ con: true, msg: result }))
             .catch(err => res.send({ con: false, msg: err }));
     })
-
-    // Admin all keys
-
-
-    // Admin create key
-
-    // Admin update Key
-
-    router.post('/update/key', (req, res) => {
-        let keyObj = {
-            name: req.body.name,
-            sskey: req.body.sskey,
-            datalimit: req.body.datalimit
-        };
-
-        Key.update_key(keyObj)
-            .then(result => res.send({ con: true, msg: result }))
-            .catch(err => res.send({ con: false, msg: err }));
-    })
-
-    // Admin update Key
-
-    // Admin paginate key
-
-    router.get('/key/paginate/:start/:count', (req, res) => {
-        let start = req.param('start');
-        let count = req.param('count');
-
-        Key.paginate(Number(start), Number(count))
-            .then(result => res.send({ con: true, msg: result }))
-            .catch(err => res.send({ con: false, msg: err }));
-    });
-
-    // Admin paginate key
 
     // Admin delete key
 
