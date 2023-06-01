@@ -13,6 +13,10 @@ let ServerScheme = new Schema({
 
 });
 
+let AILogScheme = new Schema({
+    log: { type: String },
+    since: { type: Date,required:true}
+})
 
 let AdminScheme = new Schema({
     email: { type: String, required: true },
@@ -34,9 +38,14 @@ let KeyScheme = new Schema({
 })
 
 
+AILogScheme.plugin(autoI, { field: 'logid' });
+AILogScheme.plugin(paginate);
+let AILog = mongoose.model('log', AILogScheme);
+
 ServerScheme.plugin(autoI, { field: 'serverid' });
 ServerScheme.plugin(paginate);
 let Server = mongoose.model('server', ServerScheme);
+
 
 AdminScheme.plugin(autoI, { field: 'adminId' });
 AdminScheme.plugin(paginate);
@@ -50,4 +59,5 @@ module.exports = {
     Server,
     Key,
     Admin,
+    AILog
 }

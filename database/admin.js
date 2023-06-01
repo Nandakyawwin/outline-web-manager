@@ -68,3 +68,7 @@ module.exports = {
     update_admin,
     delete_admin
 }
+
+
+ // admin email= sawpyaephyokyaw2023@gmail.com
+ // password   = admin@sppk@2023
